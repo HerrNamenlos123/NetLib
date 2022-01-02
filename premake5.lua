@@ -6,6 +6,10 @@ function appendTable(tableA, tableB)
     end
 end
 
+-- Include the subprojects
+include "modules/asio"
+include "modules/spdlog"
+
 -- Main library project
 project "NetLib"
     kind "StaticLib"
@@ -47,7 +51,16 @@ project "NetLib"
 
     
     -- Main source files
-    files ({ "include/**" })
+    files ({ "include/**", "src/**" })
+
+    -- Asio dependency
+    dependson "asio"
+    includedirs (ASIO_INCLUDE_DIRS)
+
+    -- spdlog dependency
+    dependson "spdlog"
+    includedirs (SPDLOG_INCLUDE_DIRS)
+    defines (SPDLOG_DEFINES)
 
 
 
@@ -58,7 +71,9 @@ project "NetLib"
 
     NETLIB_LINK_DIRS = {}
     appendTable(NETLIB_LINK_DIRS, _SCRIPT_DIR .. "/bin/%{cfg.buildcfg}/")
+    appendTable(NETLIB_LINK_DIRS, SPDLOG_LINKS)
     --appendTable(NETLIB_LINK_DIRS, "C:/Program Files/OpenSSL-Win64/lib/VC/static/")
 
-    NETLIB_LINKS = {}
-    appendTable(NETLIB_LINKS, "asio")
+    NETLIB_LINKS = { "NetLib" }
+    appendTable(NETLIB_LINKS, ASIO_LINKS)
+    appendTable(NETLIB_LINKS, SPDLOG_LINKS)
