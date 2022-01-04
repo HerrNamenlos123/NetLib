@@ -72,7 +72,6 @@ project "NetLib"
     NETLIB_LINK_DIRS = {}
     appendTable(NETLIB_LINK_DIRS, _SCRIPT_DIR .. "/bin/%{cfg.buildcfg}/")
     appendTable(NETLIB_LINK_DIRS, SPDLOG_LINKS)
-    --appendTable(NETLIB_LINK_DIRS, "C:/Program Files/OpenSSL-Win64/lib/VC/static/")
 
     NETLIB_LINKS = { "NetLib" }
     appendTable(NETLIB_LINKS, ASIO_LINKS)
