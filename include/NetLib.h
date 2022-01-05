@@ -4,6 +4,8 @@
 #include <cinttypes>    // uint8_t, ...
 #include <string>       // std::string
 #include <exception>    // std::exception
+#include <functional>   // std::function
+#include <system_error> // std::error_code
 
 /// <summary>
 /// Great care was taken that the asio headers are only included in the source file. Keeping the asio headers
@@ -102,7 +104,7 @@ namespace NetLib {
 		void StartAsyncListener();
 		void ListenerThread();
 
-		void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port;
+		void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
 
 		IncompleteTypeWrapper<UDPServerMembers> members;
 

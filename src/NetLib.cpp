@@ -163,23 +163,24 @@ namespace NetLib {
 		std::vector<uint8_t> buffer;
 		size_t bufferSize = 0;
 
-		UDPServerMembers() : socket(ioService) {}
+		UDPServerMembers(const udp::endpoint& endpoint) : socket(ioService, endpoint) {}
 		~UDPServerMembers() = default;
 	};
 
-	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize) : members(new UDPServerMembers()) {
+	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize) : members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) {
 		try {
 			LOG_DEBUG("Creating UDP listener ...");
 
 			// Setting all data members
-			members->remoteEndpoint = udp::endpoint(udp::v4(), port);
-			members->socket.connect(members->remoteEndpoint);
 			members->bufferSize = bufferSize;
 			members->callback = callback;
 
 			// Initialize the buffer
 			members->buffer.clear();
 			members->buffer.reserve(bufferSize);
+			for (size_t i = 0; i < bufferSize; i++) {
+				members->buffer.push_back(0);
+			}
 			memset(&members->buffer[0], 0, bufferSize);
 
 			// Start the listener thread
@@ -263,7 +264,7 @@ namespace NetLib {
 		LOG_DEBUG("UDP listener thread returned");
 	}
 
-	void UDPClient::logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port) {
+	void UDPServer::logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port) {
 		std::string str = "";
 		for (size_t i = 0; i < length; i++) {
 			str += std::to_string(data[i]);
