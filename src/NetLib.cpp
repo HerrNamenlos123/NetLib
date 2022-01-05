@@ -220,12 +220,18 @@ namespace NetLib {
 		if (!error) {
 
 			LOG_DEBUG("UDP Packet received, calling client callback");
+			std::string remoteHost = members->remoteEndpoint.address().to_string();
 
 #ifndef DEPLOY
-			logPacket(&members->buffer[0], bytes, members->remoteEndpoint.address().to_string().c_str(), members->remoteEndpoint.port());
+			logPacket(&members->buffer[0], bytes, remoteHost.c_str(), members->remoteEndpoint.port());
 #endif
 
-			members->callback(&members->buffer[0], bytes);
+			if (members->callback) {
+				members->callback(&members->buffer[0], bytes);
+			}
+			if (members->callbackWithHost) {
+				members->callbackWithHost(&members->buffer[0], bytes, remoteHost, members->remoteEndpoint.port());
+			}
 
 		}
 		else {
