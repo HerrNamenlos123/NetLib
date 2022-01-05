@@ -106,9 +106,7 @@ namespace NetLib {
 	size_t UDPClient::send(uint8_t* data, size_t length) {
 
 		try {
-			members->socket.open(udp::v4());
 			size_t bytes = members->socket.send_to(asio::buffer(data, length), members->remote_endpoint);
-			members->socket.close();
 
 #ifndef DEPLOY
 			logPacket(data, length, members->remote_endpoint.address().to_string().c_str(), members->remote_endpoint.port());
