@@ -89,7 +89,7 @@ namespace NetLib {
 		~UDPClientMembers() = default;
 	};
 
-	UDPClient::UDPClient(const char* ipAddress, uint16_t port) : members(new UDPClientMembers()) {
+	UDPClient::UDPClient(const std::string& ipAddress, uint16_t port) : members(new UDPClientMembers()) {
 		try {
 			members->remote_endpoint = udp::endpoint(asio::ip::address::from_string(ipAddress), port);
 			members->socket.open(udp::v4());
@@ -129,7 +129,7 @@ namespace NetLib {
 		return send(data.c_str());
 	}
 
-    void UDPClient::logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port) {
+    void UDPClient::logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port) {
         std::string str = "";
         for (size_t i = 0; i < length; i++) {
             str += std::to_string(data[i]);
@@ -282,7 +282,7 @@ namespace NetLib {
 		LOG_DEBUG("UDP listener thread returned");
 	}
 
-	void UDPServer::logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port) {
+	void UDPServer::logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port) {
 		std::string str = "";
 		for (size_t i = 0; i < length; i++) {
 			str += std::to_string(data[i]);

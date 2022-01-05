@@ -70,7 +70,7 @@ namespace NetLib {
 
 	class UDPClient {
 	public:
-		UDPClient(const char* ipAddress, uint16_t port);
+		UDPClient(const std::string& ipAddress, uint16_t port);
 		~UDPClient();
 
 		size_t send(uint8_t* data, size_t length);
@@ -78,7 +78,7 @@ namespace NetLib {
 		size_t send(const std::string& data);
 
     private:
-        void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
+        void logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port);
 
         IncompleteTypeWrapper<UDPClientMembers> members;
 	};
@@ -116,7 +116,7 @@ namespace NetLib {
 		void StartAsyncListener();
 		void ListenerThread();
 
-		void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
+		void logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port);
 
 		IncompleteTypeWrapper<UDPServerMembers> members;
 
