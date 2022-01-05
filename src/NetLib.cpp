@@ -92,6 +92,7 @@ namespace NetLib {
 	UDPClient::UDPClient(const char* ipAddress, uint16_t port) : members(new UDPClientMembers()) {
 		try {
 			members->remote_endpoint = udp::endpoint(asio::ip::address::from_string(ipAddress), port);
+			members->socket.open(udp::v4());
 			LOG_DEBUG("UDPClient Instance constructed, pointing to {}:{}", ipAddress, port);
 		}
 		catch (std::exception& e) {
@@ -100,6 +101,7 @@ namespace NetLib {
 	}
 
 	UDPClient::~UDPClient() {
+		members->socket.close();
 		LOG_DEBUG("UDPClient Instance destructed");
 	}
 
