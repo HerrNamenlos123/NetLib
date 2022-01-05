@@ -17,8 +17,8 @@ project "NetLib"
     cppdialect "C++17"
     staticruntime "on"
     location "build"
-    targetname "NetLib"
     targetdir "bin/%{cfg.buildcfg}"
+    targetname "%{prj.name}"
     
     filter { "platforms:x86" }
         architecture "x86"
