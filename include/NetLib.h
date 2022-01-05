@@ -12,6 +12,8 @@
 /// wrapped in the IncompleteTypeWrapper to make it safe.
 /// </summary>
 
+#define NETLIB_DEFAULT_UDP_BUFFER_SIZE 1024
+
 namespace NetLib {
 
     template<typename T>
@@ -62,7 +64,7 @@ namespace NetLib {
 	// ===      UDPClient Class       ===
 	// ==================================
 
-    struct UDPClientData;
+    struct UDPClientMembers;
 
 	class UDPClient {
 	public:
@@ -76,8 +78,36 @@ namespace NetLib {
     private:
         void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
 
-        IncompleteTypeWrapper<UDPClientData> members;
+        IncompleteTypeWrapper<UDPClientMembers> members;
 	};
+
+
+
+
+
+
+	// ==================================
+	// ===      UDPServer Class       ===
+	// ==================================
+
+	struct UDPServerMembers;
+
+	class UDPServer {
+	public:
+		UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE);
+		~UDPServer();
+
+	private:
+		void OnReceive(const std::error_code& error, size_t bytes);
+		void StartAsyncListener();
+		void ListenerThread();
+
+		void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port;
+
+		IncompleteTypeWrapper<UDPServerMembers> members;
+
+	};
+
 
 }
 
@@ -121,44 +151,6 @@ namespace NetLib {
 struct ALLEGRO_FILE;
 
 namespace Battery {
-
-
-	// ==================================
-	// ===      UDPServer Class       ===
-	// ==================================
-
-	struct UDPServerData;
-	// TODO: Make UDP parts good with IncompleteTypeWrapper
-	class UDPServer {
-
-		// This is a wrapper around a raw pointer which makes it possible to use an incomplete type in an std::unique_ptr. 
-		// This class is not copy safe, which is why it is private within this class and only used within the std::unique_ptr.
-		class UDPServerDataWrapper {
-			UDPServerData* data = nullptr;
-		public:
-			UDPServerDataWrapper();
-			~UDPServerDataWrapper();
-			UDPServerData* get();
-		};
-
-		std::unique_ptr<UDPServerDataWrapper> data;
-
-	public:
-		UDPServer();
-		UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback,
-				  uint16_t port, size_t bufferSize = BATTERY_DEFAULT_UDP_BUFFER_SIZE);
-		~UDPServer();
-
-		void Listen(std::function<void(uint8_t* packet, size_t packetSize)> callback,
-					uint16_t port, size_t bufferSize = BATTERY_DEFAULT_UDP_BUFFER_SIZE);
-
-	private:
-		void OnReceive(const std::error_code& error, size_t bytes);
-		void StartAsyncListener();
-		void ListenerThread();
-
-	};
-
 
 
 
