@@ -1,1 +1,3 @@
 # NetLib
+
+fix spdlog links
