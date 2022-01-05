@@ -5,6 +5,13 @@
 #include <string>       // std::string
 #include <exception>    // std::exception
 
+/// <summary>
+/// Great care was taken that the asio headers are only included in the source file. Keeping the asio headers
+/// away from the NetLib headers reduces compile time significantly and makes it compatible with virtually everything.
+/// (No issues with winsock2 library). This is achieved by outsourcing the member variables to a struct pointer, 
+/// wrapped in the IncompleteTypeWrapper to make it safe.
+/// </summary>
+
 namespace NetLib {
 
     template<typename T>
@@ -37,6 +44,15 @@ namespace NetLib {
         LOG_LEVEL_CRITICAL
     };
 
+    /// <summary>
+    /// <para>Sets the log level for the NetLib. Available:</para>
+	/// <para>NetLib::LOG_LEVEL_TRACE</para>
+	/// <para>NetLib::LOG_LEVEL_DEBUG</para>
+	/// <para>NetLib::LOG_LEVEL_INFO</para>
+	/// <para>NetLib::LOG_LEVEL_WARN</para>
+	/// <para>NetLib::LOG_LEVEL_ERROR</para>
+	/// <para>NetLib::LOG_LEVEL_CRITICAL</para>
+    /// </summary>
     void SetLogLevel(enum LogLevel logLevel);
 
     
@@ -51,7 +67,6 @@ namespace NetLib {
 	class UDPClient {
 	public:
 		UDPClient();
-		UDPClient(UDPClient&& client);
 		UDPClient(const char* ipAddress, uint16_t port);
 		~UDPClient();
 
@@ -63,7 +78,7 @@ namespace NetLib {
     private:
         void logPacket(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
 
-        IncompleteTypeWrapper<UDPClientData> data;
+        IncompleteTypeWrapper<UDPClientData> members;
 	};
 
 }
