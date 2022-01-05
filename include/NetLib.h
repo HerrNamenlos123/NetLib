@@ -66,11 +66,9 @@ namespace NetLib {
 
 	class UDPClient {
 	public:
-		UDPClient();
 		UDPClient(const char* ipAddress, uint16_t port);
 		~UDPClient();
 
-		size_t send(uint8_t* data, size_t length, const char* ipAddress, uint16_t port);
 		size_t send(uint8_t* data, size_t length);
 		size_t send(const char* data);
 		size_t send(const std::string& data);

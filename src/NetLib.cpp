@@ -84,20 +84,10 @@ namespace NetLib {
 		asio::io_service ioService;
 		udp::socket socket;
 		udp::endpoint remote_endpoint;
-		bool endpointSet = false;
 
 		UDPClientData() : socket(ioService) {}
 		~UDPClientData() = default;
 	};
-
-	UDPClient::UDPClient() : members(new UDPClientData()) {
-		try {
-			LOG_DEBUG("UDPClient Instance constructed");
-		}
-		catch (std::exception& e) {
-			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
-		}
-	}
 
 	UDPClient::UDPClient(const char* ipAddress, uint16_t port) : members(new UDPClientData()) {
 		try {
@@ -113,31 +103,8 @@ namespace NetLib {
 	UDPClient::~UDPClient() {
 		LOG_DEBUG("UDPClient Instance destructed");
 	}
-	
-	size_t UDPClient::send(uint8_t* data, size_t length, const char* ipAddress, uint16_t port) {
-		try {
-			auto& socket = members->socket;
-
-			socket.open(udp::v4());
-			size_t bytes = socket.send_to(asio::buffer(data, length), udp::endpoint(asio::ip::address::from_string(ipAddress), port));
-			socket.close();
-
-#ifndef DEPLOY
-            logPacket(data, length, ipAddress, port);
-#endif
-
-			return bytes;
-		}
-		catch (std::exception& e) {
-			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
-		}
-	}
 
 	size_t UDPClient::send(uint8_t* data, size_t length) {
-
-		if (!members->endpointSet) {
-			throw std::runtime_error("Can't send UDP data: IP and port were not specified!");
-		}
 
 		try {
 			members->socket.open(udp::v4());
