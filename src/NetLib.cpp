@@ -159,6 +159,7 @@ namespace NetLib {
 		bool terminate = false;
 		std::thread listenerThread;
 		std::function<void(uint8_t* packet, size_t packetSize)> callback;
+		std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callbackWithHost;
 
 		std::vector<uint8_t> buffer;
 		size_t bufferSize = 0;
@@ -167,15 +168,37 @@ namespace NetLib {
 		~UDPServerMembers() = default;
 	};
 
-	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize) : members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) {
+	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize) 
+		: members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) 
+	{
+		members->callback = callback;
+		Initialize(port, bufferSize);
+	}
+
+	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback, uint16_t port, size_t bufferSize) 
+		: members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) 
+	{
+		members->callbackWithHost = callback;
+		Initialize(port, bufferSize);
+	}
+
+	UDPServer::~UDPServer() {
+		LOG_DEBUG("Terminating UDP listener");
+
+		// Set the terminate flag and wait until the listener thread returns
+		members->terminate = true;
+		members->socket.close();
+		members->listenerThread.join();
+
+		LOG_DEBUG("UDPServer Instance destructed");
+	}
+
+	void UDPServer::Initialize(uint16_t port, size_t bufferSize) {
 		try {
 			LOG_DEBUG("Creating UDP listener ...");
 
-			// Setting all data members
-			members->bufferSize = bufferSize;
-			members->callback = callback;
-
 			// Initialize the buffer
+			members->bufferSize = bufferSize;
 			members->buffer.clear();
 			members->buffer.reserve(bufferSize);
 			for (size_t i = 0; i < bufferSize; i++) {
@@ -191,17 +214,6 @@ namespace NetLib {
 		catch (std::exception& e) {
 			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
 		}
-	}
-
-	UDPServer::~UDPServer() {
-		LOG_DEBUG("Terminating UDP listener");
-
-		// Set the terminate flag and wait until the listener thread returns
-		members->terminate = true;
-		members->socket.close();
-		members->listenerThread.join();
-
-		LOG_DEBUG("UDPServer Instance destructed");
 	}
 
 	void UDPServer::OnReceive(const std::error_code& error, size_t bytes) {

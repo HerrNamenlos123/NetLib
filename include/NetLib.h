@@ -96,10 +96,22 @@ namespace NetLib {
 
 	class UDPServer {
 	public:
-		UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE);
+		UDPServer(
+			std::function<void(uint8_t* packet, size_t packetSize)> callback, 
+			uint16_t port, 
+			size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE
+		);
+
+		UDPServer(
+			std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback, 
+			uint16_t port, size_t 
+			bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE
+		);
+
 		~UDPServer();
 
 	private:
+		void Initialize(uint16_t port, size_t bufferSize);
 		void OnReceive(const std::error_code& error, size_t bytes);
 		void StartAsyncListener();
 		void ListenerThread();
