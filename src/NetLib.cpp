@@ -100,7 +100,8 @@ namespace NetLib {
 			}
 			str.pop_back();
 			str.pop_back();
-			LOG_INFO("[SendUDP()]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+			LOG_INFO("[SendUDP()]: Packet sent to {}:{}", ipAddress, port);
+			LOG_TRACE("[SendUDP()]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
 #endif
 
 			// Close the socket
@@ -190,7 +191,8 @@ namespace NetLib {
         }
         str.pop_back();
         str.pop_back();
-		LOG_INFO("[UDPClient]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+		LOG_INFO("[UDPClient]: Packet sent to {}:{}", ipAddress, port);
+		LOG_TRACE("[UDPClient]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
     }
 
 
@@ -343,7 +345,8 @@ namespace NetLib {
 		}
 		str.pop_back();
 		str.pop_back();
-		LOG_INFO("[UDPServer]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+		LOG_INFO("[UDPServer]: Packet received from {}:{}", ipAddress, port);
+		LOG_TRACE("[UDPServer]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
 	}
 
 }
