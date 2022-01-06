@@ -17,8 +17,6 @@ using asio::ip::udp;
 
 // TODO: Make logging more fool-proof (and check if name already exists, prevent crashes)
 
-// TODO: Add function to set NetLib's log level at runtime
-
 #ifndef DEPLOY
 
 #define LOG_SET_LOGLEVEL(...)			NetLib::logger->set_level(__VA_ARGS__)
