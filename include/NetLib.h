@@ -7,6 +7,8 @@
 #include <functional>   // std::function
 #include <system_error> // std::error_code
 
+#include "NetworkInterfaces.h"
+
 /// <summary>
 /// Great care was taken that the asio headers are only included in the source file. Keeping the asio headers
 /// away from the NetLib headers reduces compile time significantly and makes it compatible with virtually everything.
