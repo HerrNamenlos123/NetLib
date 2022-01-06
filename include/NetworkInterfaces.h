@@ -19,11 +19,12 @@ namespace NetLib {
         std::string address;
         std::string subnet;
         std::string broadcast;
-        size_t broadcast2;
         size_t reassemblySize;
         int state;  // enum InterfaceState
     };
 
 	std::vector<Interface> GetNetworkInterfaces();
+
+    std::string CreateBroadcastAddress(const Interface& ifc);
 
 }

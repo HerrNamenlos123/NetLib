@@ -9,6 +9,33 @@
 
 namespace NetLib {
 
+    std::vector<std::string> SplitString(std::string str, char delimeter) {
+        std::string::size_type b = 0;
+        std::vector<std::string> result;
+
+        while ((b = str.find_first_not_of(delimeter, b)) != std::string::npos) {
+            auto e = str.find_first_of(delimeter, b);
+            result.push_back(str.substr(b, e - b));
+            b = e;
+        }
+
+        return result;
+    }
+
+    std::string JoinStrings(std::vector<std::string> strings, std::string spacer) {
+        std::string str = "";
+
+        for (size_t i = 0; i < strings.size(); i++) {
+            str += strings[i];
+
+            if (i < strings.size() - 1 && spacer != "") {
+                str += spacer;
+            }
+        }
+
+        return str;
+    }
+
 	std::vector<Interface> GetNetworkInterfaces() {
 
         // Get the required buffer size
@@ -48,7 +75,6 @@ namespace NetLib {
 
             IPAddr.S_un.S_addr = (u_long)table[0].table[i].dwBCastAddr;
             ifc.broadcast = inet_ntoa(IPAddr);
-            ifc.broadcast2 = table[0].table[i].dwBCastAddr;
 
             ifc.reassemblySize = table[0].table[i].dwReasmSize;
 
@@ -69,4 +95,21 @@ namespace NetLib {
 
         return interfaces;
 	}
+
+    std::string CreateBroadcastAddress(const Interface& ifc) {
+        auto ipParts = SplitString(ifc.address, '.');
+        auto subParts = SplitString(ifc.subnet, '.');
+
+        if (subParts.size() != 4 || ipParts.size() != 4) {  // Weird
+            return "";
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (subParts[i] != "255") {
+                ipParts[i] = "255";
+            }
+        }
+
+        return JoinStrings(ipParts, ".");
+    }
 }
