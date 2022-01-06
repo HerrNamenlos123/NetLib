@@ -61,6 +61,21 @@ namespace NetLib {
     /// </summary>
     void SetLogLevel(enum LogLevel logLevel);
 
+
+
+
+
+
+	// ==================================
+	// ===      NetLib::SendUDP       ===
+	// ==================================
+
+	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length);
+
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data);
+
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data);
+
     
 
 
