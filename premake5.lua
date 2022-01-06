@@ -80,3 +80,12 @@ project "NetLib"
     NETLIB_LINKS = { "NetLib" }
     appendTable(NETLIB_LINKS, ASIO_LINKS)
     appendTable(NETLIB_LINKS, SPDLOG_LINKS)
+
+    NETLIB_DEFINES = {}
+
+    -- Forward the include directories if wanted
+    -- A library can set NETLIB_WANT_SPDLOG to true to use the NetLib's spdlog module
+    if (NETLIB_WANT_SPDLOG) then
+        appendTable(NETLIB_INCLUDE_DIRS, SPDLOG_INCLUDE_DIRS)
+        appendTable(NETLIB_DEFINES, SPDLOG_DEFINES)
+    end
