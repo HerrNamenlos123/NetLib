@@ -69,7 +69,11 @@ namespace NetLib {
 	// ==================================
 	// ===      NetLib::SendUDP       ===
 	// ==================================
-
+	//
+	// This function simply creates a UDP socket, sends the message and closes it again. The principle is
+	// the same as in the UDPClient class. The difference is that the UDPClient keeps the socket open while
+	// the object is alive. Use this function for sending a few packets sporadically.
+	//
 	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length);
 
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data);
@@ -82,7 +86,10 @@ namespace NetLib {
 	// ==================================
 	// ===      UDPClient Class       ===
 	// ==================================
-
+	//
+	// This class creates a UDP socket and keeps it alive for the lifetime of the object. 
+	// Use this class for streaming a lot of packets to the same IP and port.
+	
     struct UDPClientMembers;
 
 	class UDPClient {

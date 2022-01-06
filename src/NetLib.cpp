@@ -92,6 +92,17 @@ namespace NetLib {
 			// Send the data
 			size_t bytes = socket.send_to(asio::buffer(data, length), remote_endpoint);
 
+#ifndef DEPLOY
+			std::string str = "";
+			for (size_t i = 0; i < length; i++) {
+				str += std::to_string(data[i]);
+				str += ", ";
+			}
+			str.pop_back();
+			str.pop_back();
+			LOG_INFO("[SendUDP()]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+#endif
+
 			// Close the socket
 			socket.close();
 			LOG_DEBUG("[SendUDP()]: Operation successful");
@@ -112,7 +123,6 @@ namespace NetLib {
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data) {
 		return SendUDP(ipAddress, port, (uint8_t*)data.c_str(), data.length());
 	}
-
 
 
 
