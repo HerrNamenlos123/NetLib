@@ -100,7 +100,7 @@ namespace NetLib {
 			}
 			str.pop_back();
 			str.pop_back();
-			LOG_INFO("[SendUDP()]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+			LOG_INFO("[SendUDP()]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
 #endif
 
 			// Close the socket
