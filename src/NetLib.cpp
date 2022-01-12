@@ -15,6 +15,8 @@ using asio::ip::udp;
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 
+using namespace std::placeholders;
+
 // TODO: Make logging more fool-proof (and check if name already exists, prevent crashes)
 
 #ifndef DEPLOY
@@ -79,14 +81,14 @@ namespace NetLib {
 	// ===      NetLib::SendUDP       ===
 	// ==================================
 
-	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length) {
+	bool SendUDP(const asio::ip::address& ipAddress, uint16_t port, uint8_t* data, size_t length) {
 		try {
-			LOG_DEBUG("[SendUDP()]: Connecting to {}:{}", ipAddress, port);
+			LOG_DEBUG("[SendUDP()]: Connecting to {}:{}", ipAddress.to_string(), port);
 
 			// Create the socket
 			asio::io_service ioService;
 			udp::socket socket(ioService);
-			udp::endpoint remote_endpoint(udp::endpoint(asio::ip::address::from_string(ipAddress), port));
+			udp::endpoint remote_endpoint(udp::endpoint(ipAddress, port));
 			socket.open(udp::v4());
 
 			// Send the data
@@ -100,8 +102,8 @@ namespace NetLib {
 			}
 			str.pop_back();
 			str.pop_back();
-			LOG_INFO("[SendUDP()]: Packet sent to {}:{}", ipAddress, port);
-			LOG_TRACE("[SendUDP()]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+			LOG_INFO("[SendUDP()]: Packet sent to {}:{}", ipAddress.to_string(), port);
+			LOG_TRACE("[SendUDP()]: Packet sent to {}:{} -> [{}] -> \"{}\"", ipAddress.to_string(), port, str, std::string((const char*)data, length));
 #endif
 
 			// Close the socket
@@ -117,12 +119,28 @@ namespace NetLib {
 		return false;
 	}
 
+	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, data, length);
+	}
+
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data, strlen(data));
+	}
+
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data.c_str(), data.length());
+	}
+
+	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length) {
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, data, length);
+	}
+
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data) {
-		return SendUDP(ipAddress, port, (uint8_t*)data, strlen(data));
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data, strlen(data));
 	}
 
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data) {
-		return SendUDP(ipAddress, port, (uint8_t*)data.c_str(), data.length());
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data.c_str(), data.length());
 	}
 
 
@@ -201,11 +219,11 @@ namespace NetLib {
 
 
 
-	// ==================================
-	// ===      UDPServer Class       ===
-	// ==================================
+	// =======================================
+	// ===      UDPServerAsync Class       ===
+	// =======================================
 
-	struct UDPServerMembers {
+	struct UDPServerAsyncMembers {
 
 		asio::io_service ioService;
 		udp::socket socket;
@@ -219,38 +237,42 @@ namespace NetLib {
 		std::vector<uint8_t> buffer;
 		size_t bufferSize = 0;
 
-		UDPServerMembers(const udp::endpoint& endpoint) : socket(ioService, endpoint) {}
-		~UDPServerMembers() = default;
+		UDPServerAsyncMembers(const udp::endpoint& endpoint) : socket(ioService, endpoint) {}
+		~UDPServerAsyncMembers() = default;
 	};
 
-	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize) 
-		: members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) 
+	UDPServerAsync::UDPServerAsync(std::function<void(uint8_t* packet, size_t packetSize)> callback, uint16_t port, size_t bufferSize)
+		: members(new UDPServerAsyncMembers(udp::endpoint(udp::v4(), port)))
 	{
 		members->callback = callback;
 		Initialize(port, bufferSize);
 	}
 
-	UDPServer::UDPServer(std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback, uint16_t port, size_t bufferSize) 
-		: members(new UDPServerMembers(udp::endpoint(udp::v4(), port))) 
+	UDPServerAsync::UDPServerAsync(std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback, uint16_t port, size_t bufferSize)
+		: members(new UDPServerAsyncMembers(udp::endpoint(udp::v4(), port)))
 	{
 		members->callbackWithHost = callback;
 		Initialize(port, bufferSize);
 	}
 
-	UDPServer::~UDPServer() {
-		LOG_DEBUG("[UDPServer]: Terminating UDP listener");
+	UDPServerAsync::~UDPServerAsync() {
+		LOG_DEBUG("[UDPServerAsync]: Terminating UDP listener");
 
 		// Set the terminate flag and wait until the listener thread returns
 		members->terminate = true;
 		members->socket.close();
 		members->listenerThread.join();
 
-		LOG_DEBUG("[UDPServer]: Instance destructed");
+		LOG_DEBUG("[UDPServerAsync]: Instance destructed");
 	}
 
-	void UDPServer::Initialize(uint16_t port, size_t bufferSize) {
+	std::string UDPServerAsync::GetLocalIP() {
+		return members->socket.local_endpoint().address().to_string();
+	}
+
+	void UDPServerAsync::Initialize(uint16_t port, size_t bufferSize) {
 		try {
-			LOG_DEBUG("[UDPServer]: Creating UDP listener ...");
+			LOG_DEBUG("[UDPServerAsync]: Creating UDP listener ...");
 
 			// Initialize the buffer
 			members->bufferSize = bufferSize;
@@ -262,19 +284,19 @@ namespace NetLib {
 			memset(&members->buffer[0], 0, bufferSize);
 
 			// Start the listener thread
-			members->listenerThread = std::thread(std::bind(&UDPServer::ListenerThread, this));
+			members->listenerThread = std::thread(std::bind(&UDPServerAsync::ListenerThread, this));
 
-			LOG_DEBUG("[UDPServer]: Instance constructed");
+			LOG_DEBUG("[UDPServerAsync]: Instance constructed");
 		}
 		catch (std::exception& e) {
 			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
 		}
 	}
 
-	void UDPServer::OnReceive(const std::error_code& error, size_t bytes) {
+	void UDPServerAsync::OnReceive(const std::error_code& error, size_t bytes) {
 		if (!error) {
 
-			LOG_DEBUG("[UDPServer]: Packet received, calling client callback");
+			LOG_DEBUG("[UDPServerAsync]: Packet received, calling client callback");
 			std::string remoteHost = members->remoteEndpoint.address().to_string();
 
 #ifndef DEPLOY
@@ -294,27 +316,27 @@ namespace NetLib {
 			if (members->terminate)		// Errors are ignored if thread is being terminated
 				return;
 
-			LOG_WARN("[UDPServer]: Error " + std::to_string(error.value()) + ": " + error.message());
+			LOG_WARN("[UDPServerAsync]: Error " + std::to_string(error.value()) + ": " + error.message());
 		}
 
 		// Start listening for the next packet
 		StartAsyncListener();
 	}
 
-	void UDPServer::StartAsyncListener() {
+	void UDPServerAsync::StartAsyncListener() {
 		try {
 			members->socket.async_receive_from(asio::buffer(&members->buffer[0], members->bufferSize), members->remoteEndpoint,
-				std::bind(&UDPServer::OnReceive, this, std::placeholders::_1, std::placeholders::_2));
-			LOG_DEBUG("[UDPServer]: Async listener started");
+				std::bind(&UDPServerAsync::OnReceive, this, _1, _2));
+			LOG_DEBUG("[UDPServerAsync]: Async listener started");
 		}
 		catch (std::exception& e) {
 			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
 		}
 	}
 
-	void UDPServer::ListenerThread() {
+	void UDPServerAsync::ListenerThread() {
 
-		LOG_DEBUG("[UDPServer]: Listener thread started");
+		LOG_DEBUG("[UDPServerAsync]: Listener thread started");
 
 		try {
 
@@ -331,13 +353,13 @@ namespace NetLib {
 			LOG_CRITICAL(std::string("ASIO UDP Exception from listener thread: ") + e.what());
 		}
 		catch (...) {
-			LOG_CRITICAL("[UDPServer]: Unknown exception from listener thread!");
+			LOG_CRITICAL("[UDPServerAsync]: Unknown exception from listener thread!");
 		}
 
-		LOG_DEBUG("[UDPServer]: Listener thread terminated");
+		LOG_DEBUG("[UDPServerAsync]: Listener thread terminated");
 	}
 
-	void UDPServer::logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port) {
+	void UDPServerAsync::logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port) {
 		std::string str = "";
 		for (size_t i = 0; i < length; i++) {
 			str += std::to_string(data[i]);
@@ -345,8 +367,141 @@ namespace NetLib {
 		}
 		str.pop_back();
 		str.pop_back();
-		LOG_INFO("[UDPServer]: Packet received from {}:{}", ipAddress, port);
-		LOG_TRACE("[UDPServer]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+		LOG_INFO("[UDPServerAsync]: Packet received from {}:{}", ipAddress, port);
+		LOG_TRACE("[UDPServerAsync]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
+	}
+
+
+
+
+
+
+
+
+	// ==================================
+	// ===      UDPServer Class       ===
+	// ==================================
+
+	UDPServer::UDPServer(uint16_t port, size_t bufferSize)
+		: server(std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteIP, uint16_t remotePort)>(
+			std::bind(&UDPServer::OnReceive, this, _1, _2, _3, _4)), port, bufferSize
+	) {
+		LOG_DEBUG("[UDPServer]: Instance constructed");
+	}
+
+	UDPServer::~UDPServer() {
+		LOG_DEBUG("[UDPServer]: Instance destructed");
+	}
+
+	std::optional<Packet> UDPServer::ReceivePacket() {
+		std::lock_guard<std::mutex> guard(bufferMutex);
+
+		if (packetBuffer.size() == 0)
+			return std::nullopt;
+
+		auto first = packetBuffer.front();
+		packetBuffer.pop();
+		return std::make_optional(first);
+	}
+
+	std::string UDPServer::GetLocalIP() {
+		return server.GetLocalIP();
+	}
+
+	void UDPServer::OnReceive(uint8_t* packet, size_t packetSize, const std::string& remoteIP, uint16_t remotePort) {
+		std::lock_guard<std::mutex> guard(bufferMutex);
+
+		if (packetBuffer.size() >= NETLIB_MAX_PACKET_COUNT)
+			return;
+
+		Packet p;
+		p.data.reserve(packetSize);
+		for (size_t i = 0; i < packetSize; i++) {
+			p.data.push_back(packet[i]);
+		}
+
+		packetBuffer.push(std::move(p));
+	}
+
+
+
+
+
+
+
+
+	// ==========================================
+	// ===      UDPServerBlocking Class       ===
+	// ==========================================
+
+	struct UDPServerBlockingMembers {
+
+		asio::io_service ioService;
+		udp::socket socket;
+
+		std::vector<uint8_t> buffer;
+
+		UDPServerBlockingMembers(const udp::endpoint& endpoint) : socket(ioService, endpoint) {}
+		~UDPServerBlockingMembers() = default;
+	};
+
+	UDPServerBlocking::UDPServerBlocking(uint16_t port, size_t bufferSize)
+		: members(new UDPServerBlockingMembers(udp::endpoint(udp::v4(), port)))
+	{
+		try {
+			LOG_DEBUG("[UDPServerBlocking]: Creating UDP listener ...");
+
+			// Initialize the buffer
+			members->buffer.clear();
+			members->buffer.reserve(bufferSize);
+			for (size_t i = 0; i < bufferSize; i++) {
+				members->buffer.push_back(0);
+			}
+
+			LOG_DEBUG("[UDPServerBlocking]: Instance constructed");
+		}
+		catch (std::exception& e) {
+			throw std::runtime_error(std::string("ASIO Exception: ") + e.what());
+		}
+	}
+
+	UDPServerBlocking::~UDPServerBlocking() {
+
+		members->socket.close();
+
+		LOG_DEBUG("[UDPServerBlocking]: Instance destructed");
+	}
+
+	std::optional<std::vector<uint8_t>> UDPServerBlocking::ReceivePacket() {
+
+		udp::endpoint remote_endpoint;
+		std::error_code error;
+		members->socket.receive_from(asio::buffer(members->buffer), remote_endpoint, 0, error);
+
+		logPacket(
+			&members->buffer[0],
+			members->buffer.size(),
+			members->socket.remote_endpoint().address().to_string(),
+			members->socket.remote_endpoint().port()
+		);
+
+		if (error && error != asio::error::message_size) {
+			return std::nullopt;
+		}
+
+		return std::make_optional(members->buffer);
+	}
+
+	void UDPServerBlocking::logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port) {
+		std::string str = "";
+		for (size_t i = 0; i < length; i++) {
+			str += std::to_string(data[i]);
+			str += ", ";
+		}
+		str.pop_back();
+		str.pop_back();
+		LOG_INFO("[UDPServerBlocking]: Packet received from {}:{}", ipAddress, port);
+		LOG_TRACE("[UDPServerBlocking]: Packet received from {}:{} -> [{}] -> \"{}\"", ipAddress, port, str, std::string((const char*)data, length));
 	}
 
 }

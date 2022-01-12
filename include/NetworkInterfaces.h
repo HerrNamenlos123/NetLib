@@ -27,4 +27,6 @@ namespace NetLib {
 
     std::string CreateBroadcastAddress(const Interface& ifc);
 
+    uint32_t ipToBytes(const std::string& ip);
+
 }

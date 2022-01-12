@@ -112,4 +112,8 @@ namespace NetLib {
 
         return JoinStrings(ipParts, ".");
     }
+
+    uint32_t ipToBytes(const std::string& ip) {
+        return inet_addr(ip.c_str());
+    }
 }

@@ -6,6 +6,11 @@
 #include <exception>    // std::exception
 #include <functional>   // std::function
 #include <system_error> // std::error_code
+#include <optional>	
+#include <atomic>	
+#include <mutex>		
+#include <utility>		// std::pair
+#include <queue>		
 
 #include "NetworkInterfaces.h"
 
@@ -17,6 +22,7 @@
 /// </summary>
 
 #define NETLIB_DEFAULT_UDP_BUFFER_SIZE 1024
+#define NETLIB_MAX_PACKET_COUNT 50
 
 namespace NetLib {
 
@@ -74,10 +80,12 @@ namespace NetLib {
 	// the same as in the UDPClient class. The difference is that the UDPClient keeps the socket open while
 	// the object is alive. Use this function for sending a few packets sporadically.
 	//
+	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data);
+
 	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length);
-
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data);
-
 	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data);
 
     
@@ -112,27 +120,29 @@ namespace NetLib {
 
 
 
-	// ==================================
-	// ===      UDPServer Class       ===
-	// ==================================
+	// =======================================
+	// ===      UDPServerAsync Class       ===
+	// =======================================
 
-	struct UDPServerMembers;
+	struct UDPServerAsyncMembers;
 
-	class UDPServer {
+	class UDPServerAsync {
 	public:
-		UDPServer(
-			std::function<void(uint8_t* packet, size_t packetSize)> callback, 
-			uint16_t port, 
+		UDPServerAsync(
+			std::function<void(uint8_t* packet, size_t packetSize)> callback,
+			uint16_t port,
 			size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE
 		);
 
-		UDPServer(
-			std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback, 
-			uint16_t port, size_t 
-			bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE
+		UDPServerAsync(
+			std::function<void(uint8_t* packet, size_t packetSize, const std::string& remoteHost, uint16_t remotePort)> callback,
+			uint16_t port,
+			size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE
 		);
 
-		~UDPServer();
+		~UDPServerAsync();
+
+		std::string GetLocalIP();
 
 	private:
 		void Initialize(uint16_t port, size_t bufferSize);
@@ -142,7 +152,64 @@ namespace NetLib {
 
 		void logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port);
 
-		IncompleteTypeWrapper<UDPServerMembers> members;
+		IncompleteTypeWrapper<UDPServerAsyncMembers> members;
+
+	};
+
+
+
+
+
+
+	// ==================================
+	// ===      UDPServer Class       ===
+	// ==================================
+
+	struct Packet {
+		std::vector<uint8_t> data;
+		std::string remoteIP;
+		uint16_t remotePort = 0;
+	};
+
+	class UDPServer {
+	public:
+		UDPServer(uint16_t port, size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE);
+		~UDPServer();
+
+		std::optional<Packet> ReceivePacket();
+		std::string GetLocalIP();
+
+	private:
+		void OnReceive(uint8_t* packet, size_t packetSize, const std::string& remoteIP, uint16_t remotePort);
+
+		UDPServerAsync server;
+		std::mutex bufferMutex;
+		std::queue<Packet> packetBuffer;
+
+	};
+
+
+
+
+
+
+	// ==========================================
+	// ===      UDPServerBlocking Class       ===
+	// ==========================================
+
+	struct UDPServerBlockingMembers;
+
+	class UDPServerBlocking {
+	public:
+		UDPServerBlocking(uint16_t port, size_t bufferSize = NETLIB_DEFAULT_UDP_BUFFER_SIZE);
+		~UDPServerBlocking();
+
+		std::optional<std::vector<uint8_t>> ReceivePacket();
+
+	private:
+		void logPacket(uint8_t* data, size_t length, const std::string& ipAddress, uint16_t port);
+
+		IncompleteTypeWrapper<UDPServerBlockingMembers> members;
 
 	};
 
