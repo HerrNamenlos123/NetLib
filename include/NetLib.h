@@ -80,13 +80,13 @@ namespace NetLib {
 	// the same as in the UDPClient class. The difference is that the UDPClient keeps the socket open while
 	// the object is alive. Use this function for sending a few packets sporadically.
 	//
-	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length);
-	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data);
-	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length, bool broadcastPermissions = false);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data, bool broadcastPermissions = false);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data, bool broadcastPermissions = false);
 
-	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length);
-	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data);
-	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data);
+	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length, bool broadcastPermissions = false);
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data, bool broadcastPermissions = false);
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data, bool broadcastPermissions = false);
 
     
 
@@ -102,7 +102,7 @@ namespace NetLib {
 
 	class UDPClient {
 	public:
-		UDPClient(const std::string& ipAddress, uint16_t port);
+		UDPClient(const std::string& ipAddress, uint16_t port, bool broadcastPermission = false);
 		~UDPClient();
 
 		size_t send(uint8_t* data, size_t length);

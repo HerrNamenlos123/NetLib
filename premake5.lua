@@ -80,6 +80,9 @@ project "NetLib"
     NETLIB_LINKS = { "NetLib" }
     appendTable(NETLIB_LINKS, ASIO_LINKS)
     appendTable(NETLIB_LINKS, SPDLOG_LINKS)
+    if not os.istarget("windows") then
+        appendTable(NETLIB_LINKS, { "pthread" })
+    end
 
     NETLIB_DEFINES = {}
 

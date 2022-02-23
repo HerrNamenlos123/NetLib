@@ -81,7 +81,7 @@ namespace NetLib {
 	// ===      NetLib::SendUDP       ===
 	// ==================================
 
-	bool SendUDP(const asio::ip::address& ipAddress, uint16_t port, uint8_t* data, size_t length) {
+	bool SendUDP(const asio::ip::address& ipAddress, uint16_t port, uint8_t* data, size_t length, bool broadcastPermissions) {
 		try {
 			LOG_DEBUG("[SendUDP()]: Connecting to {}:{}", ipAddress.to_string(), port);
 
@@ -90,6 +90,12 @@ namespace NetLib {
 			udp::socket socket(ioService);
 			udp::endpoint remote_endpoint(udp::endpoint(ipAddress, port));
 			socket.open(udp::v4());
+
+			if (broadcastPermissions) {
+				LOG_INFO("[SendUDP]: Connected with broadcast permissions");
+				socket.set_option(asio::ip::udp::socket::reuse_address(true));
+        		socket.set_option(asio::socket_base::broadcast(true));
+			}
 
 			// Send the data
 			size_t bytes = socket.send_to(asio::buffer(data, length), remote_endpoint);
@@ -119,28 +125,28 @@ namespace NetLib {
 		return false;
 	}
 
-	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length) {
-		return SendUDP(asio::ip::address_v4(ipAddress), port, data, length);
+	bool SendUDP(uint32_t ipAddress, uint16_t port, uint8_t* data, size_t length, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, data, length, broadcastPermissions);
 	}
 
-	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data) {
-		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data, strlen(data));
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const char* data, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data, strlen(data), broadcastPermissions);
 	}
 
-	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data) {
-		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data.c_str(), data.length());
+	bool SendUDP(uint32_t ipAddress, uint16_t port, const std::string& data, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address_v4(ipAddress), port, (uint8_t*)data.c_str(), data.length(), broadcastPermissions);
 	}
 
-	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length) {
-		return SendUDP(asio::ip::address::from_string(ipAddress), port, data, length);
+	bool SendUDP(const std::string& ipAddress, uint16_t port, uint8_t* data, size_t length, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, data, length, broadcastPermissions);
 	}
 
-	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data) {
-		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data, strlen(data));
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const char* data, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data, strlen(data), broadcastPermissions);
 	}
 
-	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data) {
-		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data.c_str(), data.length());
+	bool SendUDP(const std::string& ipAddress, uint16_t port, const std::string& data, bool broadcastPermissions) {
+		return SendUDP(asio::ip::address::from_string(ipAddress), port, (uint8_t*)data.c_str(), data.length(), broadcastPermissions);
 	}
 
 
@@ -161,10 +167,16 @@ namespace NetLib {
 		~UDPClientMembers() = default;
 	};
 
-	UDPClient::UDPClient(const std::string& ipAddress, uint16_t port) : members(new UDPClientMembers()) {
+	UDPClient::UDPClient(const std::string& ipAddress, uint16_t port, bool broadcastPermission) : members(new UDPClientMembers()) {
 		try {
 			members->remote_endpoint = udp::endpoint(asio::ip::address::from_string(ipAddress), port);
 			members->socket.open(udp::v4());
+
+			if (broadcastPermission) {
+				LOG_INFO("[UDPClient]: Constructing instance with broadcast permissions");
+				members->socket.set_option(asio::ip::udp::socket::reuse_address(true));
+        		members->socket.set_option(asio::socket_base::broadcast(true));
+			}
 			LOG_DEBUG("[UDPClient]: Instance constructed, pointing to {}:{}", ipAddress, port);
 		}
 		catch (std::exception& e) {

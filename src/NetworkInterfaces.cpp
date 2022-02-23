@@ -1,11 +1,20 @@
 
 #include "NetworkInterfaces.h"
 
+#ifdef _WIN32
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
 #include <iphlpapi.h>
-
 #pragma comment(lib, "iphlpapi.lib")
+#else   // ELSE _WIN32
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
+#endif  // END _WIN32
+
+#include <iostream>
 
 namespace NetLib {
 
@@ -37,7 +46,9 @@ namespace NetLib {
     }
 
 	std::vector<Interface> GetNetworkInterfaces() {
+        std::vector<Interface> interfaces;
 
+#ifdef _WIN32
         // Get the required buffer size
         DWORD bufferSize = 0;
         if (GetIpAddrTable(nullptr, &bufferSize, 0) != ERROR_INSUFFICIENT_BUFFER) {
@@ -59,7 +70,6 @@ namespace NetLib {
         }
 
         // Construct the address table
-        std::vector<Interface> interfaces;
         for (size_t i = 0; i < (size_t)table[0].dwNumEntries; i++) {
 
             IN_ADDR IPAddr;
@@ -92,6 +102,44 @@ namespace NetLib {
 
             interfaces.push_back(ifc);
         }
+
+#else   // ELSE _WIN32
+
+        struct ifaddrs *ifaddr;     // Get all network interfaces
+        if (getifaddrs(&ifaddr) == -1)
+            return interfaces;
+
+        // Loop through all network interfaces
+        for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+
+            if (ifa->ifa_addr == NULL)
+                continue;
+
+            if (ifa->ifa_addr->sa_family == AF_INET) {  // Only accept IPv4 addresses
+                
+                std::string address(INET_ADDRSTRLEN, '\0');
+                std::string subnet(INET_ADDRSTRLEN, '\0');
+
+                void* tmpAddrPtr = &((struct sockaddr_in *)(ifa->ifa_addr))->sin_addr;
+                inet_ntop(AF_INET, tmpAddrPtr, &address[0], INET_ADDRSTRLEN);
+                tmpAddrPtr = &((struct sockaddr_in *)(ifa->ifa_netmask))->sin_addr;
+                inet_ntop(AF_INET, tmpAddrPtr, &subnet[0], INET_ADDRSTRLEN);
+
+                Interface interface;
+                interface.index = 0;
+                interface.address = std::string(address);
+                interface.name = std::string(ifa->ifa_name);
+                interface.subnet = std::string(subnet);
+                interface.reassemblySize = 0;
+                interface.state = InterfaceState::NONE;
+
+                interfaces.push_back(interface);
+            }
+        }
+
+        freeifaddrs(ifaddr);
+
+#endif  // END _WIN32
 
         return interfaces;
 	}

@@ -15,12 +15,13 @@ namespace NetLib {
     };
 
     struct Interface {
-        size_t index;
+        size_t index;           // Windows only
         std::string address;
-        std::string subnet;
-        std::string broadcast;
-        size_t reassemblySize;
-        int state;  // enum InterfaceState
+        std::string name;       // Non-windows only
+        std::string subnet;     // Windows only
+        std::string broadcast;  // Windows only
+        size_t reassemblySize;  // Windows only
+        InterfaceState state;   // Windows only
     };
 
 	std::vector<Interface> GetNetworkInterfaces();
