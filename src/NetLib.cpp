@@ -6,7 +6,6 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #endif
 
-#define ASIO_STANDALONE
 #include <asio.hpp>
 using asio::ip::udp;
 
